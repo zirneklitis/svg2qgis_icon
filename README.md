@@ -1,4 +1,4 @@
-# svg2qgis_icon
+![Avots org](https://github.com/user-attachments/assets/13f681ed-5653-4730-addf-f9b033601750)# svg2qgis_icon
 
 ## In short
 Optimizes SVG format images for use as QGIS mapping icons. 
@@ -48,4 +48,28 @@ Usage: **perl svg2qgis_icon.pl --ind _DIR1_ --outd _DIR2_ [--size _NN_]**
 ### Colour ramp works as well.
 
 ![22 2-edited_icon_cat](https://github.com/user-attachments/assets/25814246-4386-4f73-84ec-8f70f68578fb)
+
+### A bit more complex example
+#### Original *SVG* file as displayed in «*Inkscape*»
+(Sorce: https://github.com/qgis/QGIS-Resources/tree/master/collections/gis_lab)
+
+![Avots_Inkscape-fs8](https://github.com/user-attachments/assets/187cdc68-ce50-484d-92bb-904bc2bf9953)
+
+#### The modified icon
+
+![Avots_melns-fs8](https://github.com/user-attachments/assets/bec5e099-201c-40c1-9148-6345aad4c45b)
+
+#### The filled colour is applied to the lines as well
+
+![Avots_violets-fs8](https://github.com/user-attachments/assets/4288c3dd-2c03-49bb-bee3-6509490e49d1)
+
+#### The stroke width is applied only to the line elements not the areas
+
+![Avots_resns-fs8](https://github.com/user-attachments/assets/aa932e97-2222-4b57-874c-c2c9780d55e7)
+
+#### Colour ramp impacts both lines and areas
+
+![Avots_klases-fs8](https://github.com/user-attachments/assets/320b3d06-1ed3-497b-9a34-6273d11fbc20)
+
+
 
