@@ -8,7 +8,7 @@ As an input is directory name not a separate file name.
 
 To create SVG symbols with modifiable fill color, stroke color and 
 stroke width in QGIS, you should replace the style attribute from the 
-path element with these 3 attributes:
+path element with these 5 attributes:
 
  ```
     fill="param(fill) #FFF"
