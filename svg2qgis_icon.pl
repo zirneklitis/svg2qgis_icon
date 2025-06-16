@@ -2,13 +2,13 @@
 
 my $DESCRIPTION = 'Optimizes SVG format images for use as QGIS mapping icons.';
 my $LICENSE = 'Kārlis Kalviškis, GPLv3';
-my $VERSION = '0.0.13 2025/06/13';
+my $VERSION = '0.01.00 2025/06/16';
 
 # SVG description:
 # https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/
 
 # Current limitations:
-# Only 'path' elements has full transformation support.
+# 'circle' and 'ellipse' elements has partly transformation support.
 
 
 use strict;
@@ -21,7 +21,11 @@ use File::Path qw( make_path );
 use Getopt::Long;
 use Math::Trig;
 
+# The new size of icons.
 my $WidthHeight = 64;
+
+# 'rect' should be converted to 'path'.
+my $ConvertRect = 1;
 
 
 GetOptions('ind=s' => \my $In_DIR,
@@ -226,37 +230,42 @@ sub process_element {
 	}
 }
 
-# Function to handle rect  elements
-# Does not work for 'rotate', 'skewx', 'skewy' transformations.
-# Missing feature:
-# 	Should be converted to 'Path' otherwise these transformations
-# 	cannot be removed.
+# Function to handle 'rect'  elements
+# Should be converted to 'path' otherwise
+# 'rotate', 'skewx', 'skewy' transformations
+# cannot be applied.
 sub handle_rect {
 	my ($element, $matrix) = @_;
-	my $x = $element->att('x') || 0;
-	my $y = $element->att('y') || 0;
-	my $width = $element->att('width') || 0;
-	my $height = $element->att('height') || 0;
-	my $rx = $element->att('rx') || 0;
-	my $ry = $element->att('ry') || 0;
+	if ($ConvertRect) {
+		&rect2path ($element);
+		&handle_path ($element, $matrix);
+	}
+	else {
+		my $x = $element->att('x') || 0;
+		my $y = $element->att('y') || 0;
+		my $width = $element->att('width') || 0;
+		my $height = $element->att('height') || 0;
+		my $rx = $element->att('rx') || 0;
+		my $ry = $element->att('ry') || 0;
 
-	# Apply the matrix transformation to the coordinates
-	my ($new_x, $new_y) = &transform_point ($x, $y, $matrix);
-	my $new_width = &new_radius ($width,  $matrix);
-	my $new_height = &new_radius ($height,  $matrix);
-	my $new_rx = &new_radius ($rx,  $matrix);
-	my $new_ry = &new_radius ($ry,  $matrix);
+		# Apply the matrix transformation to the coordinates
+		my ($new_x, $new_y) = &transform_point ($x, $y, $matrix);
+		my $new_width = &new_radius ($width,  $matrix);
+		my $new_height = &new_radius ($height,  $matrix);
+		my $new_rx = &new_radius ($rx,  $matrix);
+		my $new_ry = &new_radius ($ry,  $matrix);
 
-	# Update the element coordinates
-	$element->set_att('x', $new_x);
-	$element->set_att('y', $new_y);
-	$element->set_att('width', $new_width);
-	$element->set_att('height', $new_height);
-	$element->set_att('rx', $new_rx);
-	$element->set_att('ry', $new_ry);
-	$element->del_att('pathLength');
+		# Update the element coordinates
+		$element->set_att('x', $new_x);
+		$element->set_att('y', $new_y);
+		$element->set_att('width', $new_width);
+		$element->set_att('height', $new_height);
+		$element->set_att('rx', $new_rx);
+		$element->set_att('ry', $new_ry);
+		$element->del_att('pathLength');
 
-	&process_colours($element);
+		&process_colours($element);
+	}
 }
 
 # Function to handle circle elements
@@ -306,7 +315,6 @@ sub handle_ellipse {
 # Function to handle polygon, and polyline elements
 sub handle_polygon {
 	my ($element, $matrix) = @_;
-	my ($a, $b, $c, $d, $e, $f) = @$matrix;
 	my $points = $element->att('points');
 	$points =~ s/([^Ee\s])-/$1 -/g;
 	$points =~ s/^\s+|\s+$//g;
@@ -314,15 +322,7 @@ sub handle_polygon {
 
 	# Apply the matrix transformation to each point pair
 	for (my $i = 0; $i < @points; $i += 2) {
-		my $x = $points[$i];
-		my $y = $points[$i+1];
-
-		# Apply the matrix transformation
-		my $new_x = $a * $x + $c * $y + $e;
-		my $new_y = $b * $x + $d * $y + $f;
-
-		$points[$i] = $new_x;
-		$points[$i+1] = $new_y;
+		($points[$i], $points[$i+1]) = &transform_point($points[$i], $points[$i+1], $matrix);
 	}
 
 	# Update the points attribute with the transformed values
@@ -722,3 +722,32 @@ sub filled_only {
 		);
 }
  
+sub rect2path {
+	my ($element) = @_;
+	my $x1 = $element->att('x') || 0;
+	my $y1 = $element->att('y') || 0;
+	my $width = $element->att('width') || 0;
+	my $height = $element->att('height') || 0;
+	my $rx = $element->att('rx') || 0;
+	my $ry = $element->att('ry') || 0;
+	
+	$element->set_tag ('path');
+	$element->del_att ('x', 'y', 'width', 'height', 'rx', 'ry', 'pathLength');
+	if ($rx == 0 and $ry == 0) {
+		print "Nav apaļs\n";
+		$element->set_att ('d', "M $x1, $y1 h $width v  $height h -$width v -$height");
+	}
+	else {
+		my $x1r = $x1 + $rx;
+		my $y1r = $y1 + $ry;
+		my $x1r2 = $x1 + $rx / 2;
+		my $y1r2 = $y1 + $ry / 2;
+		my $x2 = $x1 + $width;
+		my $y2 = $y1 + $height;
+		my $x2r = $x2 - $rx;
+		my $y2r = $y2 - $ry;
+		my $x2r2 = $x2 - $rx / 2;
+		my $y2r2 = $y2 - $ry / 2;
+		$element->set_att ('d', "M $x1r, $y1 H $x2r C $x2r2, $y1 $x2, $y1r2 $x2, $y1r V $y2r C $x2, $y2r2 $x2r2, $y2 $x2r, $y2 H $x1r C $x1r2, $y2 $x1, $y2r2  $x1, $y2r V $y1r C $x1, $y1r2 $x1r2, $y1 $x1r, $y1");
+	} 
+}
