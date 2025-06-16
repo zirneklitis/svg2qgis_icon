@@ -733,8 +733,7 @@ sub rect2path {
 	
 	$element->set_tag ('path');
 	$element->del_att ('x', 'y', 'width', 'height', 'rx', 'ry', 'pathLength');
-	if ($rx == 0 and $ry == 0) {
-		print "Nav apaļs\n";
+	if (!$rx and !$ry) {
 		$element->set_att ('d', "M $x1, $y1 h $width v  $height h -$width v -$height");
 	}
 	else {
