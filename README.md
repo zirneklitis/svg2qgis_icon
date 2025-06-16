@@ -1,4 +1,4 @@
-![Avots org](https://github.com/user-attachments/assets/13f681ed-5653-4730-addf-f9b033601750)# svg2qgis_icon
+# svg2qgis_icon
 
 ## In short
 Optimizes SVG format images for use as QGIS mapping icons. 
