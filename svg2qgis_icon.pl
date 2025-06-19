@@ -2,7 +2,7 @@
 
 my $DESCRIPTION = 'Optimizes SVG format images for use as QGIS mapping icons.';
 my $LICENSE = 'Kārlis Kalviškis, GPLv3';
-my $VERSION = '0.01.00 2025/06/16';
+my $VERSION = '0.01.01 2025/06/19';
 
 # SVG description:
 # https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/
@@ -109,6 +109,7 @@ foreach my $file (@files){
 	
 	# Delete «Inkscape» configuration information.
 	$_ -> delete for $svg -> get_xpath('//sodipodi:namedview');
+	$_ -> delete for $svg -> get_xpath('//inkscape:perspective');
 
 	# Process all elements.
 	foreach my $node ($svg->root->children) {
@@ -657,7 +658,12 @@ sub process_colours {
 			&line_only($element);
 		}
 		else {
-			&outlined_element($element);
+			if ($style =~/stroke:none/){
+				&filled_with_outlined($element);
+			}
+			else {
+				&outlined_element($element);
+			}
 		}
 	}
 	elsif ($style = $element->att('fill')) {
@@ -703,6 +709,14 @@ sub outlined_element {
 		);
 }
 
+sub filled_with_outlined {
+	my ($element) = @_;
+	$element->set_att(
+		'fill'           => 'param(outline) #AAAAAA',
+		'fill-opacity'   => 'param(outline-opacity)',
+		'stroke'         => 'none',
+		);
+}
 sub line_only {
 	my ($element) = @_;
 	$element->set_att(
